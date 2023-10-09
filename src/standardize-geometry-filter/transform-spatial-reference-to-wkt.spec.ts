@@ -1,4 +1,4 @@
-import { normalizeSpatialReferenceToWkt } from './normalize-spatial-reference-to-wkt';
+import { transformSpatialReferenceToWkt } from './transform-spatial-reference-to-wkt';
 import * as projCodes from '@esri/proj-codes';
 
 jest.mock('@esri/proj-codes', () => {
@@ -16,14 +16,15 @@ jest.mock('@alloc/quick-lru', () => {
   };
 });
 
-describe('normalizeSpatialReferenceToWkt', () => {
+describe('transformSpatialReferenceToWkt', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   })
 
   test('invalid input', () => {
     try {
-      normalizeSpatialReferenceToWkt(undefined);
+      /* tslint:disable-next-line */
+      transformSpatialReferenceToWkt(undefined as any);
       throw new Error('should have thrown')
     } catch (error) {
       expect(error.message).toEqual('Unsupported spatial reference format: "undefined"');
@@ -31,36 +32,36 @@ describe('normalizeSpatialReferenceToWkt', () => {
   });
 
   test('wkid input', () => {
-    const result = normalizeSpatialReferenceToWkt(4326)
+    const result = transformSpatialReferenceToWkt(4326)
     expect(result).toEqual('the-wkt');
     expect(projCodes.lookup.mock.calls[0]).toEqual([4326]);
   });
 
   test('string-wkid input', () => {
-    const result = normalizeSpatialReferenceToWkt('4326')
+    const result = transformSpatialReferenceToWkt('4326')
     expect(result).toEqual('the-wkt');
     expect(projCodes.lookup.mock.calls[0]).toEqual([4326]);
   });
 
   test('spatial reference wkid input', () => {
-    const result = normalizeSpatialReferenceToWkt({ wkid: 4326})
+    const result = transformSpatialReferenceToWkt({ wkid: 4326})
     expect(result).toEqual('the-wkt');
     expect(projCodes.lookup.mock.calls[0]).toEqual([4326]);
   });
 
   test('wkt input', () => {
-    const result = normalizeSpatialReferenceToWkt('GEOGCS["WGS 84"]')
+    const result = transformSpatialReferenceToWkt('GEOGCS["WGS 84"]')
     expect(result).toEqual('GEOGCS["WGS 84"]');
   });
 
   test('spatial reference latest-wkid input', () => {
-    const result = normalizeSpatialReferenceToWkt({ latestWkid: 4326})
+    const result = transformSpatialReferenceToWkt({ latestWkid: 4326})
     expect(result).toEqual('the-wkt');
     expect(projCodes.lookup.mock.calls[0]).toEqual([4326]);
   });
 
   test('spatial reference wkt input', () => {
-    const result = normalizeSpatialReferenceToWkt({ wkt: 'GEOGCS["WGS 84"]'})
+    const result = transformSpatialReferenceToWkt({ wkt: 'GEOGCS["WGS 84"]'})
     expect(result).toEqual('GEOGCS["WGS 84"]');
   });
 
@@ -74,7 +75,7 @@ describe('normalizeSpatialReferenceToWkt', () => {
       };
     });
     try {
-      normalizeSpatialReferenceToWkt({ wkid: 99999});
+      transformSpatialReferenceToWkt({ wkid: 99999});
       throw new Error('should have thrown')
     } catch (error) {
       expect(error.message).toEqual('"99999" is an unknown spatial reference');
@@ -83,7 +84,7 @@ describe('normalizeSpatialReferenceToWkt', () => {
 
   test('unparseable WKT', () => {
     try {
-      normalizeSpatialReferenceToWkt({ wkt: 'test' });
+      transformSpatialReferenceToWkt({ wkt: 'test' });
       throw new Error('should have thrown')
     } catch (error) {
       expect(error.message).toEqual('Spatial reference WKT is unparseable: "test"');

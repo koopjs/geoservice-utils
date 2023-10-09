@@ -1,8 +1,8 @@
-const { normalizeGeometryFilter } = require('./');
+const { standardizeGeometryFilter } = require('./');
 
-describe('normalizeGeometryFilter', () => {
+describe('standardizeGeometryFilter', () => {
   test('delimited point', () => {
-    const result = normalizeGeometryFilter({ geometry: '-123, 48'});
+    const result = standardizeGeometryFilter({ geometry: '-123, 48'});
     expect(result).toEqual({
       geometry: {
         coordinates: [-123, 48],
@@ -14,7 +14,7 @@ describe('normalizeGeometryFilter', () => {
   });
 
   test('delimited point with options', () => {
-    const result = normalizeGeometryFilter({ geometry: '-123, 48',
+    const result = standardizeGeometryFilter({ geometry: '-123, 48',
       inSR: 4326,
       reprojectionSR: 3857,
       spatialRel: 'esriSpatialRelIntersects',
@@ -30,7 +30,7 @@ describe('normalizeGeometryFilter', () => {
   });
 
   test('delimited bbox', () => {
-    const result = normalizeGeometryFilter({ geometry: '-123, 48, -122, 49' });
+    const result = standardizeGeometryFilter({ geometry: '-123, 48, -122, 49' });
     expect(result).toEqual({
       geometry: {
         coordinates: [
@@ -50,7 +50,7 @@ describe('normalizeGeometryFilter', () => {
   });
 
   test('point', () => {
-    const result = normalizeGeometryFilter({ geometry: { x: -123, y: 48 }});
+    const result = standardizeGeometryFilter({ geometry: { x: -123, y: 48 }});
     expect(result).toEqual({
       geometry: {
         coordinates: [-123, 48],
@@ -62,7 +62,7 @@ describe('normalizeGeometryFilter', () => {
   });
 
   test('envelope object with spatial reference', () => {
-    const result = normalizeGeometryFilter({ geometry: {
+    const result = standardizeGeometryFilter({ geometry: {
       xmin: -123,
       xmax: -122,
       ymin: 48,
@@ -87,7 +87,7 @@ describe('normalizeGeometryFilter', () => {
   });
 
   test('polyline', () => {
-    const result = normalizeGeometryFilter({ geometry: {
+    const result = standardizeGeometryFilter({ geometry: {
       paths: [
         [
           [1, 4],
@@ -115,7 +115,7 @@ describe('normalizeGeometryFilter', () => {
   });
 
   test('multi-polyline', () => {
-    const result = normalizeGeometryFilter({ geometry: {
+    const result = standardizeGeometryFilter({ geometry: {
       paths: [
         [
           [1, 4],
@@ -149,7 +149,7 @@ describe('normalizeGeometryFilter', () => {
   });
 
   test('polygon', () => {
-    const result = normalizeGeometryFilter({
+    const result = standardizeGeometryFilter({
       geometry: {
         rings: [
           [
@@ -182,7 +182,7 @@ describe('normalizeGeometryFilter', () => {
 
   test('unsupported', () => {
     try {
-      normalizeGeometryFilter({ geometry: { hello: 'world' } });
+      standardizeGeometryFilter({ geometry: { hello: 'world' } });
       throw new Error('should have thrown');
     } catch (error) {
       expect(error.message).toEqual(

@@ -10,7 +10,7 @@ import {
 import { arcgisToGeoJSON } from '@terraformer/arcgis';
 import bboxToPolygon from '@turf/bbox-polygon';
 
-import { normalizeSpatialReferenceToWkt } from './normalize-spatial-reference-to-wkt';
+import { transformSpatialReferenceToWkt } from './transform-spatial-reference-to-wkt';
 import { projectCoordinates } from './project-coordinates';
 import {
   isArcgisEnvelope,
@@ -40,18 +40,18 @@ type GeometryFilter = IEnvelope | IPoint | IPolyline | IPolygon | number[];
 
 type ArcgisSpatialReference = string | number | ISpatialReference;
 
-export interface INormalizedGeometryFilter {
+export interface IStandardizedGeometryFilter {
   geometry: Geometry;
   spatialReference?: ArcgisSpatialReference;
   relation: string;
 }
 
-export function normalizeGeometryFilter<T extends ArcgisSpatialReference>(params: {
+export function standardizeGeometryFilter<T extends ArcgisSpatialReference>(params: {
   geometry: GeometryFilter | string;
   inSR?: T;
   reprojectionSR?: T;
   spatialRel?: SpatialRelationship;
-}): INormalizedGeometryFilter {
+}): IStandardizedGeometryFilter {
   const { geometry, inSR, reprojectionSR, spatialRel } = params;
   const filter = (
     _.isString(geometry) ? parseString(geometry as string) : geometry
@@ -62,8 +62,8 @@ export function normalizeGeometryFilter<T extends ArcgisSpatialReference>(params
   const spatialReference =
     extractGeometryFilterSpatialReference(filter) || inSR || reprojectionSR;
   const filterCrsWkt =
-    spatialReference && normalizeSpatialReferenceToWkt(spatialReference);
-  const targetCrsWkt = reprojectionSR && normalizeSpatialReferenceToWkt(reprojectionSR);
+    spatialReference && transformSpatialReferenceToWkt(spatialReference);
+  const targetCrsWkt = reprojectionSR && transformSpatialReferenceToWkt(reprojectionSR);
 
   const geojsonGeometry = transformGeometryToGeojson(filter);
   const projectedGeometry = shouldReproject(filterCrsWkt, targetCrsWkt)

@@ -1,8 +1,8 @@
-# normalizeGeometryFilter
+# standardizeGeometryFilter
 
-The GeoService `geometry` filter can be one of many formats: a delimited-string representing a point, a delimited-string representing a bounding box, or an ArcGIS geometry. Geometry formats may or may not include a `spatialReference` property, and if they do not, it might have been sent in a separate `inSR` parameter.  In addition, the filter itself, does not include a target operation or spatial relation (intersection, falls within, etc).  This is captured in GeoService `spatialRel` parameter.
+The GeoService `geometry` filter can be one of many formats: a delimited-string representing a point, a delimited-string representing a bounding box, or an ArcGIS geometry. Geometry formats may or may not include a `spatialReference` property, and if they do not, it might have been sent in a separate `inSR` parameter.  In addition, the filter itself, does not include a target operation or spatial relation (intersection, falls within, etc).  This is captured in the GeoService `spatialRel` parameter.
 
-This utility accepts the noted parameters and their possible variation and returns a `normalized` geometry-filter-object.
+This utility accepts the noted parameters and their possible variation and returns a "standardized" geometry-filter-object.
 
 ## Usage
 
@@ -22,7 +22,7 @@ A spatial reference that the filter should be reprojected to. Reprojection can o
 
 
 ```js
-const filter = normalizeGeometryFilter({ geometry, inSR, spatialRel, reprojectionSR });
+const filter = standardizeGeometryFilter({ geometry, inSR, spatialRel, reprojectionSR });
 
 /*
 returns:

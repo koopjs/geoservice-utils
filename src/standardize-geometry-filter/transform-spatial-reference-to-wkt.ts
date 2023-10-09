@@ -26,7 +26,7 @@ type SpatialReference = {
 
 type Input = string | number | SpatialReference;
 
-export function normalizeSpatialReferenceToWkt(input: Input): string {
+export function transformSpatialReferenceToWkt(input: Input): string {
   const { error, value: castInput } = schema.validate(input);
 
   if (error) {
