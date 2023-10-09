@@ -68,5 +68,5 @@
   "files": [
     "dist"
   ],
-  "repository": "https://github.com/koopjs/-utils"
+  "repository": "https://github.com/koopjs/geoservice-utils"
 }
