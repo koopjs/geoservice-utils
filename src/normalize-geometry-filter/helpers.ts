@@ -1,4 +1,10 @@
-import joi  from 'joi';
+import joi from 'joi';
+import {
+  IEnvelope,
+  IPoint,
+  IPolyline,
+  IPolygon,
+} from '@esri/arcgis-rest-types';
 
 const envelopeSchema = joi.object({
   ymin: joi.number().strict().required(),
@@ -48,17 +54,19 @@ export const filterSchema = joi.alternatives(
   multipolygonSchema
 ).required();
 
-export function isArcgisEnvelope(input) {
+type GeometryFilter = IEnvelope | IPoint | IPolyline | IPolygon | number[] | string;
+
+export function isArcgisEnvelope(input: GeometryFilter): boolean {
   const { error } = envelopeSchema.validate(input);
   return !error;
 }
 
-export function isSinglePointArray(input) {
+export function isSinglePointArray(input: GeometryFilter): boolean {
   const { error } = pointArraySchema.validate(input);
   return !error;
 }
 
-export function isEnvelopeArray(input) {
+export function isEnvelopeArray(input: GeometryFilter): boolean {
   const { error } = envelopeArraySchema.validate(input);
   return !error;
 }
