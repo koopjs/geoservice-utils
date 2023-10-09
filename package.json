@@ -1,6 +1,6 @@
 {
   "name": "@koopjs/geoservice-utils",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "A set of utilities for working with Geoservice requests and parameters.",
   "main": "dist/index.js",
   "scripts": {
