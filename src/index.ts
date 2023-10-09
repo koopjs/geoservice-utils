@@ -1,1 +1,1 @@
-export * from './normalize-geometry-filter';
+export * from './standardize-geometry-filter';
