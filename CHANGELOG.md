@@ -1,6 +1,6 @@
 # @koopjs/geoservice-utils
 
-## Unreleased
+## 2.1.0
 ### Adds
 - combineObjectIdsAndWhere utility
 
