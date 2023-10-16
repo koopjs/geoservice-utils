@@ -6,20 +6,7 @@ This utility accepts the noted parameters and their possible variation and retur
 
 ## Usage
 
-### Parameters
-#### `geometry` (required)
-
-The value of `geometry` can be a comma-delimited point, comma-delimited bounding box, or an ArcGIS geometry in JSON.
-
-#### `inSR` (optional)
-A spatial reference designation for the input geometry. It can be specified as either a well-known ID, and WKT string, or as a [spatial reference JSON object](https://developers.arcgis.com/documentation/common-data-types/geometry-objects.htm).
-
-#### `spatialRel` (optional)
-The spatial relationship that is intended to be applied to the input geometry.  Defaults to `'esriSpatialRelIntersects'`.
-
-#### `reprojectionSR` (optional)
-A spatial reference that the filter should be reprojected to. Reprojection can only be executed if the geometry's initial spatial reference has been defined. As with `inSR`, it can be specified as either a well-known ID, and WKT string, or as a [spatial reference JSON object](https://developers.arcgis.com/documentation/common-data-types/geometry-objects.htm).
-
+### Example
 
 ```js
 const filter = standardizeGeometryFilter({ geometry, inSR, spatialRel, reprojectionSR });
@@ -33,6 +20,20 @@ returns:
 }
 */ 
 ```
+
+### Parameters
+#### `geometry`: string | object (required)
+
+The value of `geometry` can be a comma-delimited point, comma-delimited bounding box, or an ArcGIS geometry in JSON.
+
+#### `inSR`: number | string | object (optional)
+A spatial reference designation for the input geometry. It can be specified as either a well-known ID, and WKT string, or as a [spatial reference JSON object](https://developers.arcgis.com/documentation/common-data-types/geometry-objects.htm).
+
+#### `spatialRel`: string (optional)
+The spatial relationship that is intended to be applied to the input geometry.  Defaults to `'esriSpatialRelIntersects'`.
+
+#### `reprojectionSR`: number | string | object (optional)
+A spatial reference that the filter should be reprojected to. Reprojection can only be executed if the geometry's initial spatial reference has been defined. As with `inSR`, it can be specified as either a well-known ID, and WKT string, or as a [spatial reference JSON object](https://developers.arcgis.com/documentation/common-data-types/geometry-objects.htm).
 
 ### Return 
 ```js
