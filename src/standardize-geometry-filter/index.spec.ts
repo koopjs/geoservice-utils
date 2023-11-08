@@ -66,8 +66,7 @@ describe('standardizeGeometryFilter', () => {
       xmin: -123,
       xmax: -122,
       ymin: 48,
-      ymax: 49,
-      spatialReference: { wkid: 4326 }
+      ymax: 49
     }});
     expect(result).toEqual({
       geometry: {
