@@ -1,6 +1,5 @@
 # @koopjs/geoservice-utils
 
-## Unreleased
 ## 2.1.3
 ### Fixed
 - point, line, polygon geometries can have their own spatial reference 
