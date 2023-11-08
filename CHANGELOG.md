@@ -1,5 +1,9 @@
 # @koopjs/geoservice-utils
 
+## Unreleased
+### Fixed
+- envelope geometries can have their own spatial reference 
+
 ## 2.1.1
 ### Fixed
 - function needed export
