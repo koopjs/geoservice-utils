@@ -61,12 +61,13 @@ describe('standardizeGeometryFilter', () => {
     });
   });
 
-  test('envelope object with spatial reference', () => {
+  test('envelope object without spatial reference', () => {
     const result = standardizeGeometryFilter({ geometry: {
       xmin: -123,
       xmax: -122,
       ymin: 48,
       ymax: 49,
+      spatialReference: { wkid: 4326 }
     }});
     expect(result).toEqual({
       geometry: {
@@ -83,6 +84,32 @@ describe('standardizeGeometryFilter', () => {
       },
       relation: 'esriSpatialRelIntersects',
       spatialReference: undefined,
+    });
+  });
+
+  test('envelope object with spatial reference', () => {
+    const result = standardizeGeometryFilter({ geometry: {
+      xmin: -123,
+      xmax: -122,
+      ymin: 48,
+      ymax: 49,
+      spatialReference: { wkid: 4326, latestWkid: 9999 }
+    }});
+    expect(result).toEqual({
+      geometry: {
+        coordinates: [
+          [
+            [-122, 49],
+            [-123, 49],
+            [-123, 48],
+            [-122, 48],
+            [-122, 49],
+          ],
+        ],
+        type: 'Polygon',
+      },
+      relation: 'esriSpatialRelIntersects',
+      spatialReference: { wkid: 4326, latestWkid: 9999 },
     });
   });
 

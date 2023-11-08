@@ -10,7 +10,10 @@ const envelopeSchema = joi.object({
   ymin: joi.number().strict().required(),
   ymax: joi.number().strict().required(),
   xmin: joi.number().strict().required(),
-  xmax: joi.number().strict().required()
+  xmax: joi.number().strict().required(),
+  spatialReference: joi.object({
+    wkid: joi.number().strict().required()
+  }).unknown(true).optional()
 });
 
 const envelopeArraySchema = joi.array().items(joi.number()).length(4);
