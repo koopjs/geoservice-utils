@@ -13,10 +13,10 @@ import bboxToPolygon from '@turf/bbox-polygon';
 import { transformSpatialReferenceToWkt } from './transform-spatial-reference-to-wkt';
 import { projectCoordinates } from './project-coordinates';
 import {
-  isArcgisEnvelope,
   isSinglePointArray,
   isEnvelopeArray,
   filterSchema,
+  isArcgisObject,
 } from './helpers';
 import {
   BBox,
@@ -94,7 +94,7 @@ function parseString(param: string): number[] {
 function extractGeometryFilterSpatialReference(
   filter: GeometryFilter,
 ): ISpatialReference | number | undefined {
-  if (isArcgisEnvelope(filter)) {
+  if (isArcgisObject(filter)) {
     return (filter as IEnvelope).spatialReference;
   }
 }
