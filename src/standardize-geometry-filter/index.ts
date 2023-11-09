@@ -88,7 +88,11 @@ function validateFilter(filter: GeometryFilter): void {
 }
 
 function parseString(param: string): number[] {
-  return param.split(',').map((item) => Number(item.trim()));
+  try {
+    return JSON.parse(param);
+  } catch (error) {
+    return param.split(',').map((item) => Number(item.trim()));
+  }
 }
 
 function extractGeometryFilterSpatialReference(
