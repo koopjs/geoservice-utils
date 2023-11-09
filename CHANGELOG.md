@@ -1,5 +1,9 @@
 # @koopjs/geoservice-utils
 
+## Unreleased
+### Added
+- parse incoming geometry strings as JSON if possible in order to support GET requests
+
 ## 2.1.3
 ### Fixed
 - point, line, polygon geometries can have their own spatial reference 

@@ -112,6 +112,35 @@ describe('standardizeGeometryFilter', () => {
     });
   });
 
+  test('geometry submitted as stringified JSON', () => {
+    const filter = { geometry: JSON.stringify({
+      xmin: -123,
+      xmax: -122,
+      ymin: 48,
+      ymax: 49,
+      spatialReference: { wkid: 4326, latestWkid: 9999 }
+    })};
+
+    const result = standardizeGeometryFilter(filter);
+
+    expect(result).toEqual({
+      geometry: {
+        coordinates: [
+          [
+            [-122, 49],
+            [-123, 49],
+            [-123, 48],
+            [-122, 48],
+            [-122, 49],
+          ],
+        ],
+        type: 'Polygon',
+      },
+      relation: 'esriSpatialRelIntersects',
+      spatialReference: { wkid: 4326, latestWkid: 9999 },
+    });
+  });
+
   test('polyline', () => {
     const result = standardizeGeometryFilter({ geometry: {
       paths: [
