@@ -1,6 +1,6 @@
 # @koopjs/geoservice-utils
 
-## Unreleased
+## 2.2.0
 ### Added
 - parse incoming geometry strings as JSON if possible in order to support GET requests
 
