@@ -1,6 +1,6 @@
 # @koopjs/geoservice-utils
 
-## Unreleased
+## 2.2.1
 ### Fixed
 - handle single number of string values for object ids
 
