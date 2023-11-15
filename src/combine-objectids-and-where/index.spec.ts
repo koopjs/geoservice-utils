@@ -21,6 +21,21 @@ describe('combine-object-ids-and-where', () => {
     expect(clause).toBe('(OBJECTID IN (\'a\',\'b\'))');
   });
 
+  it('should return clause with string objectIds as single string', () => {
+    const clause = combineObjectIdsAndWhere({ objectIds: 'foo' })
+    expect(clause).toBe('(OBJECTID IN (\'foo\'))');
+  });
+
+  it('should return clause with stringifed number objectIds as single number', () => {
+    const clause = combineObjectIdsAndWhere({ objectIds: '123' })
+    expect(clause).toBe('(OBJECTID IN (123))');
+  });
+
+  it('should return clause with objectIds as single number', () => {
+    const clause = combineObjectIdsAndWhere({ objectIds: 123 })
+    expect(clause).toBe('(OBJECTID IN (123))');
+  });
+
   it('should return clause with objectIds string and default idField', () => {
     const clause = combineObjectIdsAndWhere({ objectIds: '1,2,3', idField: '_id' })
     expect(clause).toBe('(_id IN (1,2,3))');

@@ -1,5 +1,9 @@
 # @koopjs/geoservice-utils
 
+## Unreleased
+### Fixed
+- handle single number of string values for object ids
+
 ## 2.2.0
 ### Added
 - parse incoming geometry strings as JSON if possible in order to support GET requests

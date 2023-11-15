@@ -34,7 +34,11 @@ export function combineObjectIdsAndWhere(
 }
 
 function normalizeObjectIds(
-  objectIds: string | string[] | number[],
+  objectIds: string | string[] | number | number[],
 ): string[] | number[] {
-  return Array.isArray(objectIds) ? objectIds : objectIds.split(',');
+  if (Array.isArray(objectIds)) {
+    return objectIds
+  }
+
+  return (typeof objectIds === 'string') ? objectIds.split(',') : [objectIds];
 }
