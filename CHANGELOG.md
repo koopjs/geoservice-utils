@@ -1,5 +1,9 @@
 # @koopjs/geoservice-utils
 
+## 2.2.2
+### Fixed
+- include type declarations in build
+
 ## 2.2.1
 ### Fixed
 - handle single number of string values for object ids
