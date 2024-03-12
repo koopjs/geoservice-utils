@@ -1,5 +1,9 @@
 # @koopjs/geoservice-utils
 
+## 2.2.3
+### Fixed
+- add missing WKT-parser dependency to package.json
+
 ## 2.2.2
 ### Fixed
 - include type declarations in build
