@@ -1,31 +1,24 @@
 import proj4 from 'proj4';
 import * as _ from 'lodash';
-import { Position } from 'geojson';
+import { traverseCoordinates } from './traverse-coordinates';
+import { Coordinates } from './common-types';
+import { wgsWkt } from './helpers';
 
-type Coordinates = Position | Position[] | Position[][] | Position[][][];
-
-export function projectCoordinates(coordinates: Coordinates , fromSR?: string, toSR?: string): Coordinates {
-  if (!toSR || fromSR === toSR) {
-    return coordinates;
+export function projectCoordinates(coordinates: Coordinates , fromSR: string, toSR: string): Coordinates {
+  const reproject = (coords: Coordinates): Coordinates => {
+    if (shouldReproject(coords)) {
+      if(fromSR === wgsWkt && (coords[1] === 90 || coords[1] === -90)) {
+        coords[1] = coords[1] === 90 ? 90 - 1e-8 : -90 + 90 - 1e-8;
+      }
+      return proj4(fromSR, toSR, coords);
+    }
+    return coords;
   }
-
-  return recursiveCoordinatesReproject(coordinates, fromSR, toSR);
+  
+  return traverseCoordinates(coordinates, reproject)
 }
 
-function recursiveCoordinatesReproject(coordinates: Coordinates, fromSr: string, toSr: string): Coordinates {
-  if (Array.isArray(coordinates[0])) {
-    return coordinates.map((coords) => {
-      return recursiveCoordinatesReproject(coords, fromSr, toSr)
-    }) as Coordinates;
-  }
-
-  if (shouldReproject(coordinates)) {
-    return proj4(fromSr, toSr, coordinates);
-  }
-
-  return coordinates;
-}
-
+// Prevent error in event of null or undefined coordinates
 function shouldReproject(coordinates: Coordinates): boolean {
-  return _.isNumber(coordinates[0]) && _.isNumber(coordinates[1]);
+  return coordinates && _.isNumber(coordinates[0]) && _.isNumber(coordinates[1]);
 }

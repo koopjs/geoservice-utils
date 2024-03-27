@@ -1,10 +1,15 @@
 import joi from 'joi';
-import {
-  IEnvelope,
-  IPoint,
-  IPolyline,
-  IPolygon,
-} from '@esri/arcgis-rest-types';
+import * as esriProjCodes from '@esri/proj-codes';
+import { GeometryFilter } from './common-types';
+
+export const spatialReferenceSchema = joi.object({
+  wkid: joi.number().strict().integer().optional(),
+  latestWkid: joi.number().strict().integer().optional(),
+  vcsWkid: joi.number().strict().integer().optional(),
+  latestVcsWkid: joi.number().strict().integer().optional(),
+  wkt: joi.string().optional(),
+}).unknown()
+  .or('wkid', 'latestWkid', 'vcsWkid', 'latestVcsWkid', 'wkt')
 
 const envelopeSchema = joi
   .object({
@@ -12,12 +17,7 @@ const envelopeSchema = joi
     ymax: joi.number().strict().required(),
     xmin: joi.number().strict().required(),
     xmax: joi.number().strict().required(),
-    spatialReference: joi
-      .object({
-        wkid: joi.number().strict().required(),
-      })
-      .unknown(true)
-      .optional(),
+    spatialReference: spatialReferenceSchema.optional()
   })
   .unknown(true);
 
@@ -112,37 +112,23 @@ export const filterSchema = joi
   )
   .required();
 
-type GeometryFilter =
-  | IEnvelope
-  | IPoint
-  | IPolyline
-  | IPolygon
-  | number[]
-  | string;
-
-function passesValidation(schema: joi.Schema, input: GeometryFilter): boolean {
-  const { error } = schema.validate(input);
-  return !error;
-}
-
-export function isArcgisObject(input: GeometryFilter): boolean {
-  return (
-    passesValidation(envelopeSchema, input) ||
-    passesValidation(pointSchema, input) ||
-    passesValidation(lineStringSchema, input) ||
-    passesValidation(polygonSchema, input) ||
-    passesValidation(multiPointSchema, input) ||
-    passesValidation(multiLineStringSchema, input) ||
-    passesValidation(multipolygonSchema, input)
-  );
-}
-
-export function isSinglePointArray(input: GeometryFilter): boolean {
+export function isSinglePointArray(input: GeometryFilter | string): boolean {
   const { error } = pointArraySchema.validate(input);
   return !error;
 }
 
-export function isEnvelopeArray(input: GeometryFilter): boolean {
+export function isEnvelopeArray(input: GeometryFilter | string): boolean {
   const { error } = envelopeArraySchema.validate(input);
   return !error;
 }
+
+const wgs = esriProjCodes.lookup(4326);
+
+export const wgsWkt = wgs.wkt;
+
+export const wgsExtentEnvelope = {
+  ymin: wgs.extent.slat,
+  ymax: wgs.extent.nlat,
+  xmin: wgs.extent.llon,
+  xmax: wgs.extent.rlon
+};
