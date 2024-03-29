@@ -234,6 +234,7 @@ function getSpatialReferenceFromCode(sr: ArcgisSpatialReference): any {
 
   if (!spatialReferenceDefinition) {
     console.warn(`Unknown spatial reference: ${srid}; ignoring`);
+    return;
   }
 
   const extentEnvelope = getSpatialReferenceExtent(spatialReferenceDefinition);
