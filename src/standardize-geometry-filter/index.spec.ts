@@ -1,6 +1,19 @@
-const { standardizeGeometryFilter } = require('./');
+import { ISpatialReference } from '@esri/arcgis-rest-types';
+import { standardizeGeometryFilter } from './';
+import * as projCodes from '@esri/proj-codes';
+import { GeometryFilter } from './common-types';
 
+jest.mock('@esri/proj-codes', () => ({
+  __esModule: true,
+  // @ts-ignore
+  ...jest.requireActual('@esri/proj-codes'),
+}));
+
+const mockLogger = 
 describe('standardizeGeometryFilter', () => {
+  afterAll(() => {
+    jest.resetAllMocks();
+  });
   test('delimited point', () => {
     const result = standardizeGeometryFilter({ geometry: '-123, 48' });
     expect(result).toEqual({
@@ -132,7 +145,7 @@ describe('standardizeGeometryFilter', () => {
         xmax: -122,
         ymin: 48,
         ymax: 49,
-        spatialReference: { wkid: 4326, latestWkid: 9999 },
+        spatialReference: { wkid: 4326 },
       },
       reprojectionSR: 3857,
     });
@@ -157,6 +170,44 @@ describe('standardizeGeometryFilter', () => {
     });
   });
 
+  test('envelope object with unsupported spatial reference', () => {
+    try {
+      const result = standardizeGeometryFilter({
+        geometry: {
+          xmin: -123,
+          xmax: -122,
+          ymin: 48,
+          ymax: 49,
+          spatialReference: 'foo-bar' as unknown as ISpatialReference,
+        },
+      });
+      throw new Error('should have thrown');
+    } catch (error) {
+      expect(error.message).toBe(
+        'Unsupported inSR format; must be a spatial reference ID or object',
+      );
+    }
+  });
+
+  test('envelope object with unsupported spatial reference wkt', () => {
+    try {
+      const result = standardizeGeometryFilter({
+        geometry: {
+          xmin: -123,
+          xmax: -122,
+          ymin: 48,
+          ymax: 49,
+          spatialReference: { wkt: 'foo-bar' },
+        },
+      });
+      throw new Error('should have thrown');
+    } catch (error) {
+      expect(error.message).toBe(
+        'Spatial reference WKT is unparseable: "foo-bar"',
+      );
+    }
+  });
+
   test('envelope object with unknown spatial reference', () => {
     const result = standardizeGeometryFilter({
       geometry: {
@@ -164,8 +215,8 @@ describe('standardizeGeometryFilter', () => {
         xmax: -122,
         ymin: 48,
         ymax: 49,
-        spatialReference: { wkid: 99999 },
       },
+      inSR: 9999
     });
 
     expect(result).toEqual({
@@ -186,7 +237,7 @@ describe('standardizeGeometryFilter', () => {
     });
   });
 
-  test('envelope object with spatial reference and clip option', () => {
+  test('envelope object with WGS84 spatial reference and clip option', () => {
     const result = standardizeGeometryFilter({
       geometry: {
         xmin: -123,
@@ -195,7 +246,6 @@ describe('standardizeGeometryFilter', () => {
         ymax: 95,
         spatialReference: { wkid: 4326 },
       },
-      clipToValidBounds: true,
     });
     expect(result).toEqual({
       geometry: {
@@ -226,7 +276,6 @@ describe('standardizeGeometryFilter', () => {
         ymin: 48,
         ymax: 49,
       },
-      clipToValidBounds: true,
     });
     expect(result).toEqual({
       geometry: {
@@ -278,7 +327,46 @@ describe('standardizeGeometryFilter', () => {
     });
   });
 
-  test('envelope object with WKT spatial reference and clip option', () => {
+  test('envelope object with reprojection spatial reference, without source spatial reference', () => {
+    try {
+      const result = standardizeGeometryFilter({
+        geometry: {
+          xmin: -123,
+          xmax: -122,
+          ymin: 45,
+          ymax: 90,
+        },
+        reprojectionSR: 3857,
+      });
+      throw new Error('should have thrown');
+    } catch (error) {
+      expect(error.message).toBe(
+        'Unknown geometry filter spatial reference; unable to reproject',
+      );
+    }
+  });
+
+  test('envelope object with unknown reprojection spatial reference', () => {
+    try {
+      const result = standardizeGeometryFilter({
+        geometry: {
+          xmin: -123,
+          xmax: -122,
+          ymin: 45,
+          ymax: 90,
+        },
+        inSR: 4326,
+        reprojectionSR: 99999,
+      });
+      throw new Error('should have thrown');
+    } catch (error) {
+      expect(error.message).toBe(
+        'Unknown reprojection spatial reference; unable to reproject',
+      );
+    }
+  });
+
+  test('envelope object with WKT spatial reference', () => {
     const result = standardizeGeometryFilter({
       geometry: {
         xmin: -123,
@@ -289,7 +377,6 @@ describe('standardizeGeometryFilter', () => {
           wkt: `GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",SPHEROID["WGS_1984",6378137.0,298.257223563]],PRIMEM["Greenwich",0.0],UNIT["Degree",0.0174532925199433]]`,
         },
       },
-      clipToValidBounds: true,
     });
     expect(result).toEqual({
       geometry: {
@@ -308,36 +395,6 @@ describe('standardizeGeometryFilter', () => {
       spatialReference: {
         wkt: `GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",SPHEROID["WGS_1984",6378137.0,298.257223563]],PRIMEM["Greenwich",0.0],UNIT["Degree",0.0174532925199433]]`,
       },
-    });
-  });
-
-  test('envelope object with unknown spatial reference and clip option', () => {
-    const result = standardizeGeometryFilter({
-      geometry: {
-        xmin: -123,
-        xmax: -122,
-        ymin: 48,
-        ymax: 49,
-        spatialReference: { wkid: 99999 },
-      },
-      clipToValidBounds: true,
-    });
-
-    expect(result).toEqual({
-      geometry: {
-        coordinates: [
-          [
-            [-122, 49],
-            [-123, 49],
-            [-123, 48],
-            [-122, 48],
-            [-122, 49],
-          ],
-        ],
-        type: 'Polygon',
-      },
-      relation: 'esriSpatialRelIntersects',
-      spatialReference: undefined,
     });
   });
 
@@ -473,9 +530,90 @@ describe('standardizeGeometryFilter', () => {
     });
   });
 
+  test('envelope object with spatial reference that has no wkt will not reproject', () => {
+    jest.spyOn(projCodes, 'lookup').mockReturnValue({});
+
+    try {
+      standardizeGeometryFilter({
+        geometry: {
+          xmin: -123,
+          xmax: -122,
+          ymin: 48,
+          ymax: 95,
+        },
+        inSR: 99999,
+        reprojectionSR: 3857,
+      });
+      throw new Error('should have thrown');
+    } catch (error) {
+      expect(error.message).toBe(
+        'Unknown geometry filter spatial reference WKT; unable to reproject',
+      );
+    }
+  });
+
+  test('reprojection spatial reference that has no wkt will not reproject', () => {
+    jest
+      .spyOn(projCodes, 'lookup')
+      .mockReturnValueOnce({
+        wkt: `GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",SPHEROID["WGS_1984",6378137.0,298.257223563]],PRIMEM["Greenwich",0.0],UNIT["Degree",0.0174532925199433]]`,
+      })
+      .mockReturnValueOnce({});
+
+    try {
+      standardizeGeometryFilter({
+        geometry: {
+          xmin: -123,
+          xmax: -122,
+          ymin: 48,
+          ymax: 95,
+          spatialReference: { wkid: 4326 },
+        },
+        reprojectionSR: 3857,
+      });
+      throw new Error('should have thrown');
+    } catch (error) {
+      expect(error.message).toBe(
+        'Unknown reprojection spatial reference WKT; unable to reproject',
+      );
+    }
+  });
+
+  test('envelope object with spatial reference that has no extent will not clip', () => {
+    jest.spyOn(projCodes, 'lookup').mockReturnValue({});
+    const result = standardizeGeometryFilter({
+      geometry: {
+        xmin: -123,
+        xmax: -122,
+        ymin: 48,
+        ymax: 95,
+      },
+      inSR: 99999
+    });
+
+    expect(result).toEqual({
+      geometry: {
+        coordinates: [
+          [
+            [-122, 95],
+            [-123, 95],
+            [-123, 48],
+            [-122, 48],
+            [-122, 95],
+          ],
+        ],
+        type: 'Polygon',
+      },
+      relation: 'esriSpatialRelIntersects',
+      spatialReference: { wkt: undefined, wkid: undefined },
+    });
+  });
+
   test('unsupported filter format', () => {
     try {
-      standardizeGeometryFilter({ geometry: { hello: 'world' } });
+      standardizeGeometryFilter({
+        geometry: { hello: 'world' } as unknown as GeometryFilter,
+      });
       throw new Error('should have thrown');
     } catch (error) {
       expect(error.message).toEqual(

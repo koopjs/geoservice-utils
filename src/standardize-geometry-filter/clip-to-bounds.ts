@@ -1,4 +1,4 @@
-import { traverseCoordinates } from './traverse-coordinates';
+import { transformCoordinates } from './traverse-coordinates';
 import { Coordinates } from './common-types';
 import { IEnvelope } from '@esri/arcgis-rest-types';
 
@@ -10,7 +10,7 @@ export function clipToEnvelope(coordinates: Coordinates , envelope: IEnvelope): 
     return [constrainNumber(lon, xmax, xmin), constrainNumber(lat, ymax, ymin)];
   };
 
-  return traverseCoordinates(coordinates, repositionInvalidCoordinates);
+  return transformCoordinates(coordinates, repositionInvalidCoordinates);
 }
 
 function constrainNumber (num:number, max:number, min:number): number {

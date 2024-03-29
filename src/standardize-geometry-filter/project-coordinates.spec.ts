@@ -5,7 +5,7 @@ jest.mock('proj4', () => {
   return jest.fn(() => ['lon', 'lat']);
 });
 
-describe('project-coordinates', () => {
+describe.only('project-coordinates', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -41,6 +41,30 @@ describe('project-coordinates', () => {
       '4326',
       '2991',
       [75, 45],
+    ]);
+  });
+
+  test('should constrain 90 degree latitude to avoid proj4 errors', () => {
+    const transformed = projectCoordinates([75, 90], 'GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",SPHEROID["WGS_1984",6378137.0,298.257223563]],PRIMEM["Greenwich",0.0],UNIT["Degree",0.0174532925199433]]', '2991');
+    expect(transformed[0]).toEqual('lon');
+    expect(transformed[1]).toEqual('lat');
+    expect((proj4 as any as jest.Mock).mock.calls.length).toEqual(1);
+    expect((proj4 as any as jest.Mock).mock.calls[0]).toEqual([
+      'GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",SPHEROID["WGS_1984",6378137.0,298.257223563]],PRIMEM["Greenwich",0.0],UNIT["Degree",0.0174532925199433]]',
+      '2991',
+      [75, 89.99999999],
+    ]);
+  });
+
+  test('should constrain -90 degree latitude to avoid proj4 errors', () => {
+    const transformed = projectCoordinates([75, -90], 'GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",SPHEROID["WGS_1984",6378137.0,298.257223563]],PRIMEM["Greenwich",0.0],UNIT["Degree",0.0174532925199433]]', '2991');
+    expect(transformed[0]).toEqual('lon');
+    expect(transformed[1]).toEqual('lat');
+    expect((proj4 as any as jest.Mock).mock.calls.length).toEqual(1);
+    expect((proj4 as any as jest.Mock).mock.calls[0]).toEqual([
+      'GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",SPHEROID["WGS_1984",6378137.0,298.257223563]],PRIMEM["Greenwich",0.0],UNIT["Degree",0.0174532925199433]]',
+      '2991',
+      [75, -89.99999999],
     ]);
   });
 

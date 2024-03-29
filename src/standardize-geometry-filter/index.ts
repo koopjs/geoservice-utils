@@ -1,10 +1,8 @@
 import * as _ from 'lodash';
-import proj4 from 'proj4';
 import Joi from 'joi';
 import wktParser from 'wkt-parser';
 import * as esriProjCodes from '@esri/proj-codes';
 import {
-  IEnvelope,
   ISpatialReference,
   SpatialRelationship,
 } from '@esri/arcgis-rest-types';
@@ -53,8 +51,6 @@ interface IStandardizedGeometryFilterParams {
   inSR?: ArcgisSpatialReference;
   reprojectionSR?: ArcgisSpatialReference;
   spatialRel?: SpatialRelationship;
-  clipEnvelope?: IEnvelope;
-  logger?: { [key: string]: any };
 }
 
 class StandardizedGeometryFilter {
@@ -62,11 +58,8 @@ class StandardizedGeometryFilter {
   public spatialReference;
   public relation;
   private filter;
-  private logger;
   private filterSpatialReference;
   private reprojectionSpatialReference;
-  private targetSpatialReference;
-  private clipEnvelope;
 
   static build(
     params: IStandardizedGeometryFilterParams,
@@ -82,37 +75,43 @@ class StandardizedGeometryFilter {
       inSR,
       reprojectionSR,
       spatialRel,
-      clipEnvelope,
-      logger = console,
     } = params;
 
-    this.logger = logger;
     this.filter = _.isString(geometry) ? parseString(geometry) : geometry;
     this.relation = spatialRel || 'esriSpatialRelIntersects';
 
-    this.filterSpatialReference = this.extractSR({
-      inSR: this.filter?.spatialReference || inSR,
-    });
-    this.reprojectionSpatialReference = this.extractSR({ reprojectionSR });
+    this.filterSpatialReference = this.extractSR(
+      'inSR',
+      this.filter?.spatialReference || inSR,
+    );
+    this.reprojectionSpatialReference = this.extractSR(
+      'reprojectionSR',
+      reprojectionSR,
+    );
 
     this.validateFilterShape();
-    this.validateReproject();
     this.geometry = this.transformGeometry();
 
-    this.targetSpatialReference =
-      this.reprojectionSpatialReference || this.filterSpatialReference;
-
-    this.spatialReference = this.packageSpatialReference();
+    this.spatialReference = packageSpatialReference(
+      this.filterSpatialReference,
+    );
 
     if (this.shouldClipOutOfBoundsFilter()) {
-      this.geometry.coordinates = this.clipToEnvelope(clipEnvelope);
+      this.geometry.coordinates = clipToEnvelope(
+        this.geometry.coordinates,
+        wgsExtentEnvelope,
+      );
     }
 
-    if (this.shouldReproject()) {
+    if (reprojectionSR && this.validateReproject()) {
       this.geometry.coordinates = projectCoordinates(
         this.geometry.coordinates,
         this.filterSpatialReference.wkt,
-        this.targetSpatialReference.wkt,
+        this.reprojectionSpatialReference.wkt,
+      );
+
+      this.spatialReference = packageSpatialReference(
+        this.reprojectionSpatialReference,
       );
     }
   }
@@ -130,68 +129,86 @@ class StandardizedGeometryFilter {
     return this;
   }
 
-  extractSR(srInput: { [key: string]: any } | number): ISpatialReference {
-    const srOption = Object.keys(srInput)[0];
-    const srOptionValue = srInput[srOption];
-
-    if (!srOptionValue) {
+  extractSR(
+    srSource: string,
+    spatialReference: ArcgisSpatialReference,
+  ): ISpatialReference {
+    if (!spatialReference) {
       return;
     }
 
-    const { error } = inputSpatialReferenceSchema.validate(srOptionValue);
+    const { error } = inputSpatialReferenceSchema.validate(spatialReference);
 
     if (error) {
-      throw new Error(`Unsupported ${srOption} format; ${error.message}`);
+      throw new Error(
+        `Unsupported ${srSource} format; must be a spatial reference ID or object`,
+      );
     }
 
     try {
-      if (Number.isInteger(srOptionValue) || getSrid(srOptionValue)) {
-        return getSpatialReferenceFromCode(srOptionValue);
-      }
-
-      if (srOptionValue.wkt) {
-        weakValidateWkt(srOptionValue.wkt);
-        return srOptionValue;
+      if (
+        Number.isInteger(spatialReference) ||
+        getSrid(spatialReference as ISpatialReference)
+      ) {
+        return getSpatialReferenceFromCode(spatialReference);
       }
     } catch (error) {
-      this.logger.debug(error.message, error.stacktrace);
+      console.warn(error.message);
+    }
+
+    if ((spatialReference as ISpatialReference).wkt) {
+      weakValidateWkt((spatialReference as ISpatialReference).wkt);
+      return spatialReference as ISpatialReference;
     }
   }
 
-  validateReproject(): void {
-    if (this.reprojectionSpatialReference && !this.filterSpatialReference) {
-      this.logger.debug(`Unknown inSR; unable to reproject`);
+  validateReproject(): boolean {
+    if (!this.filterSpatialReference) {
+      throw new Error(
+        'Unknown geometry filter spatial reference; unable to reproject',
+      );
     }
+
+    if (!this.filterSpatialReference.wkt) {
+      throw new Error(
+        `Unknown geometry filter spatial reference WKT; unable to reproject`,
+      );
+    }
+
+    if (!this.reprojectionSpatialReference) {
+      throw new Error(
+        `Unknown reprojection spatial reference; unable to reproject`,
+      );
+    }
+
+    if (!this.reprojectionSpatialReference.wkt) {
+      throw new Error(
+        `Unknown reprojection spatial reference WKT; unable to reproject`,
+      );
+    }
+
+    return true;
   }
 
   shouldClipOutOfBoundsFilter(): boolean {
-    return this.hasRequiredSpatialReferences() && this.hasOOBCoords();
-  }
-
-  hasRequiredSpatialReferences(): boolean {
-    return (
-      this.filterSpatialReference?.wkt &&
-      (this.reprojectionSpatialReference?.extent ||
-        this.filterSpatialReference.extent)
-    );
+    return this.filterSpatialReference?.wkt === wgsWkt && this.hasOOBCoords();
   }
 
   hasOOBCoords(): boolean {
-    const extentEnvelope = this.clipEnvelope || wgsExtentEnvelope;
-    const conditions = (coords: Coordinates): boolean => {
-      const coordinatesWkt = this.filterSpatialReference.wkt;
-      const [lon, lat] =
-        coordinatesWkt === wgsWkt || this.clipEnvelope
-          ? coords
-          : proj4(coordinatesWkt, wgsWkt, coords);
+    const extent = wgsExtentEnvelope;
+
+    const predicate = (coords: Coordinates): boolean => {
+      const [lon, lat] = coords;
+
       return (
-        lon > extentEnvelope.xmax ||
-        lon < extentEnvelope.xmin ||
-        lat > extentEnvelope.ymax ||
-        lat < extentEnvelope.ymin
+        lon > extent.xmax ||
+        lon < extent.xmin ||
+        lat > extent.ymax ||
+        lat < extent.ymin
       );
     };
-    return someCoordinates(this.geometry.coordinates, conditions);
+
+    return someCoordinates(this.geometry.coordinates, predicate);
   }
 
   transformGeometry(): Geometry {
@@ -208,51 +225,16 @@ class StandardizedGeometryFilter {
 
     return arcgisToGeoJSON(this.filter);
   }
+}
 
-  clipToEnvelope(clipEnvelope?: IEnvelope): Coordinates {
-    // no need to reproject coordinates for clipping to spatial reference extent
-    const filterCoordinatesWgs84 =
-      this.filterSpatialReference.wkt === wgsWkt
-        ? this.geometry.coordinates
-        : projectCoordinates(
-            this.geometry.coordinates,
-            this.filterSpatialReference.wkt,
-            wgsWkt,
-          );
-
-    const clippedCoordinates = clipToEnvelope(
-      filterCoordinatesWgs84,
-      clipEnvelope || wgsExtentEnvelope,
-    );
-
-    return this.filterSpatialReference.wkt === wgsWkt
-      ? clippedCoordinates
-      : projectCoordinates(
-          clippedCoordinates,
-          wgsWkt,
-          this.filterSpatialReference.wkt,
-        );
+function packageSpatialReference(
+  spatialReference?: any,
+): ISpatialReference | void {
+  if (!spatialReference) {
+    return;
   }
-
-  shouldReproject(): boolean {
-    return (
-      this.targetSpatialReference?.wkt &&
-      this.filterSpatialReference?.wkt &&
-      this.targetSpatialReference?.wkt !== this.filterSpatialReference?.wkt
-    );
-  }
-
-  packageSpatialReference(): ISpatialReference | void {
-    if (this.shouldReproject()) {
-      const { wkid, wkt } = this.reprojectionSpatialReference;
-      return { wkid, wkt };
-    }
-
-    if (this.filterSpatialReference) {
-      const { wkid, wkt } = this.filterSpatialReference;
-      return { wkid, wkt };
-    }
-  }
+  const { wkid, wkt } = spatialReference;
+  return { wkid, wkt };
 }
 
 function getSpatialReferenceFromCode(sr: ArcgisSpatialReference): any {
