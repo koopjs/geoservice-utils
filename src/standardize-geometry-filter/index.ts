@@ -18,7 +18,7 @@ import {
   wgsExtentEnvelope,
 } from './helpers';
 import { BBox } from 'geojson';
-import { clipToEnvelope } from './clip-to-bounds';
+import { clipToEnvelope } from './clip-to-envelope';
 import {
   ArcgisSpatialReference,
   Coordinates,

@@ -1,4 +1,4 @@
-import { clipToEnvelope } from './clip-to-bounds';
+import { clipToEnvelope } from './clip-to-envelope';
 
 describe('clipToBounds', () => {
   test('clipToBoundsOfSpatialReference', () => {
