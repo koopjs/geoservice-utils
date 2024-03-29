@@ -70,12 +70,7 @@ class StandardizedGeometryFilter {
   }
 
   constructor(params: IStandardizedGeometryFilterParams) {
-    const {
-      geometry,
-      inSR,
-      reprojectionSR,
-      spatialRel,
-    } = params;
+    const { geometry, inSR, reprojectionSR, spatialRel } = params;
 
     this.filter = _.isString(geometry) ? parseString(geometry) : geometry;
     this.relation = spatialRel || 'esriSpatialRelIntersects';
@@ -145,15 +140,11 @@ class StandardizedGeometryFilter {
       );
     }
 
-    try {
-      if (
-        Number.isInteger(spatialReference) ||
-        getSrid(spatialReference as ISpatialReference)
-      ) {
-        return getSpatialReferenceFromCode(spatialReference);
-      }
-    } catch (error) {
-      console.warn(error.message);
+    if (
+      Number.isInteger(spatialReference) ||
+      getSrid(spatialReference as ISpatialReference)
+    ) {
+      return getSpatialReferenceFromCode(spatialReference);
     }
 
     if ((spatialReference as ISpatialReference).wkt) {
@@ -242,7 +233,7 @@ function getSpatialReferenceFromCode(sr: ArcgisSpatialReference): any {
   const spatialReferenceDefinition = esriProjCodes.lookup(srid);
 
   if (!spatialReferenceDefinition) {
-    throw new Error(`Unknown spatial reference: ${srid}; ignoring`);
+    console.warn(`Unknown spatial reference: ${srid}; ignoring`);
   }
 
   const extentEnvelope = getSpatialReferenceExtent(spatialReferenceDefinition);
