@@ -126,8 +126,8 @@ class StandardizedGeometryFilter {
 
   extractSR(
     srSource: string,
-    spatialReference: ArcgisSpatialReference,
-  ): ISpatialReference {
+    spatialReference: ArcgisSpatialReference | undefined,
+  ): ISpatialReference | void {
     if (!spatialReference) {
       return;
     }
@@ -148,7 +148,7 @@ class StandardizedGeometryFilter {
     }
 
     if ((spatialReference as ISpatialReference).wkt) {
-      weakValidateWkt((spatialReference as ISpatialReference).wkt);
+      weakValidateWkt((spatialReference as ISpatialReference).wkt as string);
       return spatialReference as ISpatialReference;
     }
   }
@@ -246,7 +246,7 @@ function getSpatialReferenceFromCode(sr: ArcgisSpatialReference): any {
   };
 }
 
-function getSrid(sr: ISpatialReference): number {
+function getSrid(sr: ISpatialReference): number | undefined {
   return sr.wkid || sr.latestWkid || sr.vcsWkid || sr.latestVcsWkid;
 }
 
