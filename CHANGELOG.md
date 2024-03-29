@@ -1,5 +1,9 @@
 # @koopjs/geoservice-utils
 
+## 3.0.1
+### Fixed
+- typescript errors
+
 ## 3.0.0
 ### Changed
 - constrains any WGS84 out-of-bounds coordinates to their known limits (e.g., -95 latitude -> -90 latitude).
