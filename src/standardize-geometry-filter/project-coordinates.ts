@@ -1,31 +1,35 @@
 import proj4 from 'proj4';
 import * as _ from 'lodash';
-import { Position } from 'geojson';
+import { transformCoordinates } from './traverse-coordinates';
+import { Coordinates } from './common-types';
+import { wgsExtentEnvelope, wgsWkt } from './helpers';
+const WGS_MIN_LAT = wgsExtentEnvelope.ymin;
+const WGS_MAX_LAT = wgsExtentEnvelope.ymax;
 
-type Coordinates = Position | Position[] | Position[][] | Position[][][];
-
-export function projectCoordinates(coordinates: Coordinates , fromSR?: string, toSR?: string): Coordinates {
-  if (!toSR || fromSR === toSR) {
-    return coordinates;
+export function projectCoordinates(coordinates: Coordinates , fromSR: string, toSR: string): Coordinates {
+  const reproject = (coords: Coordinates): Coordinates => {
+    if (shouldReproject(coords)) {
+      const [, lat] = coords;
+      if(shouldConstrainSourceX(fromSR, lat as number)) {
+        coords[1] = constrainX(lat as number);
+      }
+      return proj4(fromSR, toSR, coords);
+    }
+    return coords;
   }
-
-  return recursiveCoordinatesReproject(coordinates, fromSR, toSR);
+  
+  return transformCoordinates(coordinates, reproject)
 }
 
-function recursiveCoordinatesReproject(coordinates: Coordinates, fromSr: string, toSr: string): Coordinates {
-  if (Array.isArray(coordinates[0])) {
-    return coordinates.map((coords) => {
-      return recursiveCoordinatesReproject(coords, fromSr, toSr)
-    }) as Coordinates;
-  }
-
-  if (shouldReproject(coordinates)) {
-    return proj4(fromSr, toSr, coordinates);
-  }
-
-  return coordinates;
-}
-
+// Prevent error in event of null or undefined coordinates
 function shouldReproject(coordinates: Coordinates): boolean {
-  return _.isNumber(coordinates[0]) && _.isNumber(coordinates[1]);
+  return coordinates && _.isNumber(coordinates[0]) && _.isNumber(coordinates[1]);
+}
+
+function shouldConstrainSourceX(fromSR: string, x: number): boolean {
+  return fromSR === wgsWkt && (x === WGS_MIN_LAT || x === WGS_MAX_LAT);
+}
+
+function constrainX(x: number): number {
+  return x === WGS_MAX_LAT ? WGS_MAX_LAT - 1e-8 : WGS_MIN_LAT + 1e-8;
 }
