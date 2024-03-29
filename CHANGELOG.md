@@ -1,6 +1,6 @@
 # @koopjs/geoservice-utils
 
-### Unreleased
+## 3.0.0
 ### Changed
 - constrains any WGS84 out-of-bounds coordinates to their known limits (e.g., -95 latitude -> -90 latitude).
 - WGS84 latitudes of -90 or 90 are modified to -89.99999 and -89.99999, respectively, allow reprojection to proceed as expected.
