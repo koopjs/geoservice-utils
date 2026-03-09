@@ -16,6 +16,7 @@ import {
   spatialReferenceSchema,
   wgsWkt,
   wgsExtentEnvelope,
+  spatialReferenceObject,
 } from './helpers';
 import { BBox } from 'geojson';
 import { clipToEnvelope } from './clip-to-envelope';
@@ -33,12 +34,33 @@ export interface IStandardizedGeometryFilter {
   relation: string;
 }
 
-const inputSpatialReferenceSchema = Joi.any()
-  .when(Joi.number(), {
-    then: Joi.number().strict().integer(),
-    otherwise: spatialReferenceSchema,
-  })
-  .optional();
+
+const JoiCustom = Joi.extend({
+  type: 'object',
+  base: Joi.object(),
+  coerce: {
+    from: 'string',
+    method(value: any) {
+      // Check if the string looks like a potential JSON object
+      if (typeof value !== 'string' || (value[0] !== '{' && !/^\s*{/.test(value))) {
+        return { value }; // Return as is if not a likely JSON string
+      }
+      try {
+        // Attempt to parse the string into an object
+        return { value: JSON.parse(value) };
+      } catch (error) {
+        // If parsing fails, Joi's base validation will handle the error
+        return { errors: [error] };
+      }
+    }
+  }
+});
+
+const inputSpatialReferenceSchema = Joi.alternatives().try(
+    Joi.number().integer(),
+    JoiCustom.object(spatialReferenceObject).unknown(),
+    spatialReferenceSchema
+  ).optional();
 
 export function standardizeGeometryFilter(
   params: IStandardizedGeometryFilterParams,
@@ -141,7 +163,12 @@ class StandardizedGeometryFilter {
     }
 
     if (
-      Number.isInteger(spatialReference) ||
+      !Number.isNaN(Number(spatialReference))
+    ) {
+      return getSpatialReferenceFromCode(Number(spatialReference));
+    }
+
+    if (
       getSrid(spatialReference as ISpatialReference)
     ) {
       return getSpatialReferenceFromCode(spatialReference);

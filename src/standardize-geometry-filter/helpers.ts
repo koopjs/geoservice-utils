@@ -2,13 +2,15 @@ import joi from 'joi';
 import * as esriProjCodes from '@esri/proj-codes';
 import { GeometryFilter } from './common-types';
 
-export const spatialReferenceSchema = joi.object({
+export const spatialReferenceObject = {
   wkid: joi.number().strict().integer().optional(),
   latestWkid: joi.number().strict().integer().optional(),
   vcsWkid: joi.number().strict().integer().optional(),
   latestVcsWkid: joi.number().strict().integer().optional(),
   wkt: joi.string().optional(),
-}).unknown()
+};
+
+export const spatialReferenceSchema = joi.object(spatialReferenceObject).unknown()
   .or('wkid', 'latestWkid', 'vcsWkid', 'latestVcsWkid', 'wkt')
 
 const envelopeSchema = joi

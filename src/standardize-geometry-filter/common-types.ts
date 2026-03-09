@@ -27,7 +27,7 @@ export type GeometryFilter = IEnvelope | IPoint | IPolyline | IPolygon | number[
 
 export type Coordinates = Position | Position[] | Position[][] | Position[][][];
 
-export type ArcgisSpatialReference = number | ISpatialReference;
+export type ArcgisSpatialReference = number | string | ISpatialReference;
 
 export type SpatialReference = {
   wkid?: number;
